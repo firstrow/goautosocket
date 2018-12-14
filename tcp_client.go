@@ -58,6 +58,9 @@ func Dial(network, addr string) (net.Conn, error) {
 	}
 
 	conn, err := DialTCP(network, nil, raddr)
+	if err != nil {
+		return nil, err
+	}
 	conn.addr = addr
 	return conn, err
 }
