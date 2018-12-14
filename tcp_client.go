@@ -40,6 +40,7 @@ type TCPClient struct {
 	lock   sync.RWMutex
 	status int32
 
+	addr          string
 	maxRetries    int
 	retryInterval time.Duration
 }
@@ -56,7 +57,9 @@ func Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	return DialTCP(network, nil, raddr)
+	conn, err := DialTCP(network, nil, raddr)
+	conn.addr = addr
+	return conn, err
 }
 
 // DialTCP returns a new *TCPClient.
@@ -147,6 +150,13 @@ func (c *TCPClient) reconnect() error {
 	}
 
 	raddr := c.TCPConn.RemoteAddr()
+	if len(c.addr) > 0 {
+		addr, err := net.ResolveTCPAddr(raddr.Network(), c.addr)
+		if err != nil {
+			return err
+		}
+		raddr = addr
+	}
 	conn, err := net.DialTCP(raddr.Network(), nil, raddr.(*net.TCPAddr))
 	if err != nil {
 		// reset shared status to offline
